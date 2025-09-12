@@ -20,10 +20,10 @@ image_mappings = {
     'Concept_3': (900, 1200, 900/1200),  # 3:4 - Vertical
     'Cuisine_1': (900, 1200, 900/1200),  # 3:4 - Vertical
     'Cuisine_2': (1080, 1080, 1),  # 1:1 - Square
+    'Menu_1': (1920, 1080, 16/9),  # 16:9 - Horizontal
     'Chef_1': (900, 1200, 900/1200),  # 3:4 - Vertical
     'Chef_2': (900, 1200, 900/1200),  # 3:4 - Vertical
     'Chef_3': (900, 1200, 900/1200),  # 3:4 - Vertical
-    'Menu_1': (1920, 1080, 16/9),  # 16:9 - Horizontal
 }
 
 def resize_and_crop(img, target_width, target_height):
@@ -118,16 +118,16 @@ if not restaurant_name:
 uploaded_files = {}
 fields = [
     ('Hero_Image_Desktop', "Main Desktop Banner Image (Horizontal)", "Image Requirement: Horizontal image with estimated aspect ratio of 16:9."),
-    ('Hero_Image_Mobile', "Main Mobile Banner Image (Horizontal)", "This can be the same as Desktop, but ideally, we want an image that works better on smaller screens. Image Requirement: Horizontal image with estimated aspect ratio of 1.6:1."),
+    ('Hero_Image_Mobile', "Main Mobile Banner Image (Horizontal)", "Image Requirement: Horizontal image with estimated aspect ratio of 1.588:1."),
     ('Concept_1', "First Concept Image (Vertical)", "Image Requirement: Vertical image with estimated aspect ratio of 3:4."),
     ('Concept_2', "Second Concept Image (Square)", "Image Requirement: Square image with estimated aspect ratio of 1:1."),
     ('Concept_3', "Third Concept Image (Vertical)", "Image Requirement: Vertical image with estimated aspect ratio of 3:4."),
     ('Cuisine_1', "First Cuisine Image (Vertical)", "Image Requirement: Vertical image with estimated aspect ratio of 3:4."),
     ('Cuisine_2', "Second Cuisine Image (Square)", "Image Requirement: Square image with estimated aspect ratio of 1:1."),
-    ('Chef_1', "First Chef Image (Vertical + Black&White) (required)", "Image Requirement: Vertical image with estimated aspect ratio of 3:4."),
+    ('Menu_1', "Menu Image (Horizontal)", "Image Requirement: Horizontal image with estimated aspect ratio of 16:9."),
+    ('Chef_1', "First Chef Image (Vertical + Black&White) (Optional)", "Image Requirement: Vertical image with estimated aspect ratio of 3:4."),
     ('Chef_2', "Second Chef Image (Vertical + Black&White) (Optional)", "Image Requirement: Vertical image with estimated aspect ratio of 3:4."),
-    ('Chef_3', "Third Chef Image (Vertical + Black&White) (Optional)", "Image Requirement: Vertical image with estimated aspect ratio of 3:4."),
-    ('Menu_1', "Menu Image (Horizontal)", "Image Requirement: Horizontal image with estimated aspect ratio of 16:9.")
+    ('Chef_3', "Third Chef Image (Vertical + Black&White) (Optional)", "Image Requirement: Vertical image with estimated aspect ratio of 3:4.")
 ]
 
 for i, (name, header, description) in enumerate(fields):
@@ -199,13 +199,9 @@ for i, (name, header, description) in enumerate(fields):
         st.markdown("<hr style='border: 1px solid #ccc; margin: 10px 0;'>", unsafe_allow_html=True)
 
 # Validation
-missing_required = [name for name, header, desc in fields if name not in ['Chef_2', 'Chef_3'] and not uploaded_files[name]]
-chef_count = sum(1 for name in ['Chef_1', 'Chef_2', 'Chef_3'] if uploaded_files[name])
-if missing_required or chef_count == 0:
-    if missing_required:
-        st.error(f"Missing required fields: {', '.join(missing_required)}.")
-    if chef_count == 0:
-        st.error("At least one Chef image (Chef_1, Chef_2, or Chef_3) is required.")
+missing_required = [name for name, header, desc in fields if name not in ['Chef_1', 'Chef_2', 'Chef_3'] and not uploaded_files[name]]
+if missing_required:
+    st.error(f"Missing required fields: {', '.join(missing_required)}.")
     st.stop()
 
 # Process button
@@ -249,5 +245,3 @@ if st.button("Process Images"):
         file_name=f"{restaurant_name}_resized_images.zip",
         mime="application/zip"
     )
-
-

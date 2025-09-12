@@ -118,7 +118,7 @@ if not restaurant_name:
 uploaded_files = {}
 fields = [
     ('Hero_Image_Desktop', "Main Desktop Banner Image (Horizontal)", "Image Requirement: Horizontal image with estimated aspect ratio of 16:9."),
-    ('Hero_Image_Mobile', "Main Mobile Banner Image (Horizontal)", "This can be the same as Desktop, but ideally, we want an image that works better on smaller screens. Image Requirement: Horizontal image with estimated aspect ratio of 1.588:1."),
+    ('Hero_Image_Mobile', "Main Mobile Banner Image (Horizontal)", "This can be the same as Desktop, but ideally, we want an image that works better on smaller screens. Image Requirement: Horizontal image with estimated aspect ratio of 1.6:1."),
     ('Concept_1', "First Concept Image (Vertical)", "Image Requirement: Vertical image with estimated aspect ratio of 3:4."),
     ('Concept_2', "Second Concept Image (Square)", "Image Requirement: Square image with estimated aspect ratio of 1:1."),
     ('Concept_3', "Third Concept Image (Vertical)", "Image Requirement: Vertical image with estimated aspect ratio of 3:4."),
@@ -249,4 +249,5 @@ if st.button("Process Images"):
         file_name=f"{restaurant_name}_resized_images.zip",
         mime="application/zip"
     )
+
 

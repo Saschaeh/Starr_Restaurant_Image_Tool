@@ -174,9 +174,14 @@ for i, (name, header, description) in enumerate(fields):
             # Aspect ratio check
             aspect_ok = abs(original_ratio - target_ratio) <= allowed_deviation
             
-            # Black and white check for Chef images
+            # Black and white check for Chef images with loading spinner
             is_chef = name in ['Chef_1', 'Chef_2', 'Chef_3']
-            bw_ok = not is_chef or is_black_and_white(img)
+            bw_ok = False
+            if is_chef:
+                with st.spinner('Checking if image is grayscale...'):
+                    bw_ok = is_black_and_white(img)
+            else:
+                bw_ok = True  # Non-Chef images don't need this check
             
             # Show warnings independently
             if not aspect_ok:

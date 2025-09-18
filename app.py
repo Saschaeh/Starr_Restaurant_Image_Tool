@@ -13,17 +13,17 @@ def get_base64_of_bin_file(bin_file_path):
 
 # Mapping of image base names to target dimensions (width, height) and aspect ratio
 image_mappings = {
-    'Hero_Image_Desktop': (1920, 1080, 16/9),  # 16:9 - Horizontal
+    'Hero_Image_Desktop': (1920, 1080, 1920/1080),  # 16:9 - Horizontal
     'Hero_Image_Mobile': (1080, 680, 1080/680),  # ~1.588 - Horizontal
-    'Concept_1': (900, 1200, 900/1200),  # 3:4 - Vertical
-    'Concept_2': (1080, 1080, 1),  # 1:1 - Square
-    'Concept_3': (900, 1200, 900/1200),  # 3:4 - Vertical
-    'Cuisine_1': (900, 1200, 900/1200),  # 3:4 - Vertical
-    'Cuisine_2': (1080, 1080, 1),  # 1:1 - Square
-    'Menu_1': (1920, 1080, 16/9),  # 16:9 - Horizontal
-    'Chef_1': (900, 1200, 900/1200),  # 3:4 - Vertical
-    'Chef_2': (900, 1200, 900/1200),  # 3:4 - Vertical
-    'Chef_3': (900, 1200, 900/1200),  # 3:4 - Vertical
+    'Concept_1': (696, 825, 696/825),  # ~0.843 (close to 3:4) - Vertical
+    'Concept_2': (525, 544, 525/544),  # ~0.965 (close to 1:1) - Square
+    'Concept_3': (696, 693, 696/693),  # ~1.004 (near 1:1) - Square
+    'Cuisine_1': (529, 767, 529/767),  # ~0.690 (close to 3:4) - Vertical
+    'Cuisine_2': (696, 606, 696/606),  # ~1.149 (close to 1:1) - Square
+    'Menu_1': (1321, 558, 1321/558),  # ~2.367 - Horizontal
+    'Chef_1': (698, 836, 698/836),  # ~0.835 (close to 3:4) - Vertical
+    'Chef_2': (698, 836, 698/836),  # ~0.835 (close to 3:4) - Vertical
+    'Chef_3': (698, 836, 698/836),  # ~0.835 (close to 3:4) - Vertical
 }
 
 def resize_and_crop(img, target_width, target_height):
@@ -117,17 +117,17 @@ if not restaurant_name:
 # Step 2: Upload fields with descriptions and styled blocks
 uploaded_files = {}
 fields = [
-    ('Hero_Image_Desktop', "Main Desktop Banner Image (Horizontal)", "Image Requirement: Horizontal image with estimated aspect ratio of 16:9."),
-    ('Hero_Image_Mobile', "Main Mobile Banner Image (Horizontal)", "Image Requirement: Horizontal image with estimated aspect ratio of 1.588:1."),
-    ('Concept_1', "First Concept Image (Vertical)", "Image Requirement: Vertical image with estimated aspect ratio of 3:4."),
-    ('Concept_2', "Second Concept Image (Square)", "Image Requirement: Square image with estimated aspect ratio of 1:1."),
-    ('Concept_3', "Third Concept Image (Vertical)", "Image Requirement: Vertical image with estimated aspect ratio of 3:4."),
-    ('Cuisine_1', "First Cuisine Image (Vertical)", "Image Requirement: Vertical image with estimated aspect ratio of 3:4."),
-    ('Cuisine_2', "Second Cuisine Image (Square)", "Image Requirement: Square image with estimated aspect ratio of 1:1."),
-    ('Menu_1', "Menu Image (Horizontal)", "Image Requirement: Horizontal image with estimated aspect ratio of 16:9."),
-    ('Chef_1', "First Chef Image (Vertical + Black&White) (Optional)", "Image Requirement: Vertical image with estimated aspect ratio of 3:4."),
-    ('Chef_2', "Second Chef Image (Vertical + Black&White) (Optional)", "Image Requirement: Vertical image with estimated aspect ratio of 3:4."),
-    ('Chef_3', "Third Chef Image (Vertical + Black&White) (Optional)", "Image Requirement: Vertical image with estimated aspect ratio of 3:4.")
+    ('Hero_Image_Desktop', "Main Desktop Banner Image (Horizontal)", "Image Requirement: Horizontal image with <u>estimated</u> aspect ratio of 16:9."),
+    ('Hero_Image_Mobile', "Main Mobile Banner Image (Horizontal)", "Image Requirement: Horizontal image with <u>estimated</u> aspect ratio of 1.588:1."),
+    ('Concept_1', "First Concept Image (Vertical)", "Image Requirement: Vertical image with <u>estimated</u> aspect ratio of 3:4."),
+    ('Concept_2', "Second Concept Image (Square)", "Image Requirement: Square image with <u>estimated</u> aspect ratio of 1:1."),
+    ('Concept_3', "Third Concept Image (Square)", "Image Requirement: Square image with <u>estimated</u> aspect ratio of 1:1."),
+    ('Cuisine_1', "First Cuisine Image (Vertical)", "Image Requirement: Vertical image with <u>estimated</u> aspect ratio of 3:4."),
+    ('Cuisine_2', "Second Cuisine Image (Square)", "Image Requirement: Square image with <u>estimated</u> aspect ratio of 1:1."),
+    ('Menu_1', "Menu Image (Horizontal)", "Image Requirement: Horizontal image with <u>estimated</u> aspect ratio of 16:9."),
+    ('Chef_1', "First Chef Image (Vertical + Black&White) (Optional)", "Image Requirement: Vertical image with <u>estimated</u> aspect ratio of 3:4."),
+    ('Chef_2', "Second Chef Image (Vertical + Black&White) (Optional)", "Image Requirement: Vertical image with <u>estimated</u> aspect ratio of 3:4."),
+    ('Chef_3', "Third Chef Image (Vertical + Black&White) (Optional)", "Image Requirement: Vertical image with <u>estimated</u> aspect ratio of 3:4.")
 ]
 
 for i, (name, header, description) in enumerate(fields):
@@ -147,7 +147,7 @@ for i, (name, header, description) in enumerate(fields):
             </style>
         """, unsafe_allow_html=True)
         st.write(f"**{header}**")
-        st.write(description)
+        st.markdown(description, unsafe_allow_html=True)
         uploaded_files[name] = st.file_uploader("", type=['jpg', 'jpeg', 'png'], key=name, label_visibility="collapsed")
         
         # Clear previous messages for this field
@@ -169,7 +169,10 @@ for i, (name, header, description) in enumerate(fields):
             width, height = img.size
             original_ratio = width / height
             target_width, target_height, target_ratio = image_mappings[name]
-            allowed_deviation = target_ratio * 0.2  # 20% deviation
+            # Override target_ratio for Concept_3 to expect square (1:1)
+            if name == 'Concept_3':
+                target_ratio = 1.0  # 1:1 as per UI description
+            allowed_deviation = target_ratio * 0.3  # 30% deviation
             
             # Aspect ratio check
             aspect_ok = abs(original_ratio - target_ratio) <= allowed_deviation
@@ -185,7 +188,7 @@ for i, (name, header, description) in enumerate(fields):
             
             # Show warnings independently
             if not aspect_ok:
-                st.warning("💡Oops Funky Ingredients: You can use this but the image's aspect ratio deviates by 20% from the target. Processing may crop substantially and not look as delicious as intended.")
+                st.warning("💡Oops Funky Ingredients: You can use this but the image's aspect ratio deviates by more than 30% from the target. Processing may crop substantially and not look as delicious as intended.")
             
             if is_chef and not bw_ok:
                 st.warning("💡Brand guidelines strongly suggest Black&White images of the chefs to keep with the editorial look.")

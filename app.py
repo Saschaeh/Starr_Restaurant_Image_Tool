@@ -63,7 +63,7 @@ def is_black_and_white(img):
     return all(abs(r - g) < 15 and abs(g - b) < 15 and abs(b - r) < 15 for r, g, b in pixels)  # Increased tolerance to 15
 
 # Streamlit app
-st.title("..::.. Starr Restaurant Image Editor ..::..")
+st.title("Starr Restaurant Image Editor")
 
 # Add background image styling
 bg_img = get_base64_of_bin_file('bg.jpg')  # Use relative path for deployment
@@ -248,4 +248,5 @@ if st.button("Process Images"):
         file_name=f"{restaurant_name}_resized_images.zip",
         mime="application/zip"
     )
+
 

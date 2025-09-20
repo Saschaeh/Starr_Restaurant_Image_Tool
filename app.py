@@ -1,9 +1,9 @@
 import streamlit as st
 from PIL import Image
-import os
-import zipfile
 import io
 import base64
+import re
+import zipfile
 
 # Function to get base64 of image
 def get_base64_of_bin_file(bin_file_path):
@@ -106,7 +106,7 @@ with st.form(key="restaurant_form"):
         if not restaurant_name:
             st.error("Please enter a restaurant name to proceed.")
         else:
-            st.session_state.restaurant_name_cleaned = restaurant_name.replace(' ', '_').replace('[^a-zA-Z0-9_]', '')
+            st.session_state.restaurant_name_cleaned = re.sub(r'[^a-zA-Z0-9_]', '', restaurant_name.replace(' ', '_'))
             st.rerun()  # Rerun to update the app state
 
 # Use the cleaned restaurant name from session state
@@ -114,7 +114,7 @@ restaurant_name = st.session_state.get("restaurant_name_cleaned")
 if not restaurant_name:
     st.stop()
 
-# Step 2: Upload fields with descriptions and styled blocks
+# Step 2: Upload fields with descriptions, styled blocks, and immediate processing
 uploaded_files = {}
 fields = [
     ('Hero_Image_Desktop', "Main Desktop Banner Image (Horizontal)", "Image Requirement: Horizontal image with <u>estimated</u> aspect ratio of 16:9."),
@@ -148,14 +148,15 @@ for i, (name, header, description) in enumerate(fields):
         """, unsafe_allow_html=True)
         st.write(f"**{header}**")
         st.markdown(description, unsafe_allow_html=True)
-        uploaded_files[name] = st.file_uploader("", type=['jpg', 'jpeg', 'png'], key=name, label_visibility="collapsed")
+        uploaded_file = st.file_uploader("", type=['jpg', 'jpeg', 'png'], key=name, label_visibility="collapsed")
+        uploaded_files[name] = uploaded_file
         
         # Clear previous messages for this field
         st.empty()  # Clear previous warnings or success messages
         
-        # Check aspect ratio and black & white for all Chef images
-        if uploaded_files[name]:
-            img = Image.open(uploaded_files[name])
+        # Process image immediately if uploaded
+        if uploaded_file:
+            img = Image.open(uploaded_file)
             # Handle EXIF orientation
             exif = img._getexif()
             if exif and 274 in exif:  # Orientation tag
@@ -196,57 +197,67 @@ for i, (name, header, description) in enumerate(fields):
             # Show success only if both conditions are met for Chef images, or just aspect for others
             if aspect_ok and (not is_chef or bw_ok):
                 st.success("✅ Perfect, looks delicious!")
+            
+            # Process and provide download link for individual image
+            resized_img = resize_and_crop(img, target_width, target_height)
+            
+            # Map file extension to PIL-compatible format
+            ext = uploaded_file.name.split('.')[-1].lower()
+            format_map = {'jpg': 'JPEG', 'jpeg': 'JPEG', 'png': 'PNG'}
+            img_format = format_map.get(ext, 'JPEG')  # Default to JPEG if extension not recognized
+            
+            # New filename
+            new_filename = f"{restaurant_name}_{name}_{target_width}x{target_height}.{ext}"
+            
+            # Save to in-memory buffer
+            img_buffer = io.BytesIO()
+            resized_img.save(img_buffer, format=img_format, quality=95)
+            img_buffer.seek(0)
+            
+            # Provide download link for this image
+            st.download_button(
+                label=f"Download Resized {name}",
+                data=img_buffer,
+                file_name=new_filename,
+                mime=f"image/{ext}",
+                key=f"download_{name}"
+            )
     
     # Add horizontal line after each section (except the last one)
     if i < len(fields) - 1:
         st.markdown("<hr style='border: 1px solid #ccc; margin: 10px 0;'>", unsafe_allow_html=True)
 
-# Validation
-missing_required = [name for name, header, desc in fields if name not in ['Chef_1', 'Chef_2', 'Chef_3'] and not uploaded_files[name]]
-if missing_required:
-    st.error(f"Missing required fields: {', '.join(missing_required)}.")
-    st.stop()
-
-# Process button
-if st.button("Process Images"):
-    progress_bar = st.progress(0)
-    total_files = len([f for f in uploaded_files.values() if f])
-    if total_files > 0:
-        zip_buffer = io.BytesIO()  # Moved outside the loop to define it once
-        zip_file = zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED)
-        for i, (name, file) in enumerate(uploaded_files.items()):
-            if file:
-                target_width, target_height, _ = image_mappings[name]
-                img = Image.open(file)
-                resized_img = resize_and_crop(img, target_width, target_height)
-                
-                # Map file extension to PIL-compatible format
-                ext = file.name.split('.')[-1].lower()
-                format_map = {'jpg': 'JPEG', 'jpeg': 'JPEG', 'png': 'PNG'}
-                img_format = format_map.get(ext, 'JPEG')  # Default to JPEG if extension not recognized
-                
-                # New filename
-                new_filename = f"{restaurant_name}_{name}_{target_width}x{target_height}.{ext}"
-                
-                # Save to in-memory buffer and add to ZIP under 'Resized' folder
-                img_buffer = io.BytesIO()
-                resized_img.save(img_buffer, format=img_format, quality=95)
-                img_buffer.seek(0)
-                zip_file.writestr(f"Resized/{new_filename}", img_buffer.read())
-            
-            # Update progress, clamped between 0.0 and 1.0
-            progress = min(max((i + 1) / total_files, 0.0), 1.0)
-            progress_bar.progress(progress)
-        zip_file.close()
-    
-    # Provide download link
-    zip_buffer.seek(0)
-    st.success("Processing complete!")
-    st.download_button(
-        label="Download ZIP of Resized Images",
-        data=zip_buffer,
-        file_name=f"{restaurant_name}_resized_images.zip",
-        mime="application/zip"
-    )
-
-
+# Batch download button for all uploaded images
+if any(uploaded_files.values()):
+    if st.button("Download All Resized Images"):
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            for name, file in uploaded_files.items():
+                if file:
+                    target_width, target_height, _ = image_mappings[name]
+                    img = Image.open(file)
+                    resized_img = resize_and_crop(img, target_width, target_height)
+                    
+                    # Map file extension to PIL-compatible format
+                    ext = file.name.split('.')[-1].lower()
+                    format_map = {'jpg': 'JPEG', 'jpeg': 'JPEG', 'png': 'PNG'}
+                    img_format = format_map.get(ext, 'JPEG')  # Default to JPEG if extension not recognized
+                    
+                    # New filename
+                    new_filename = f"{restaurant_name}_{name}_{target_width}x{target_height}.{ext}"
+                    
+                    # Save to in-memory buffer and add to ZIP under 'Resized' folder
+                    img_buffer = io.BytesIO()
+                    resized_img.save(img_buffer, format=img_format, quality=95)
+                    img_buffer.seek(0)
+                    zip_file.writestr(f"Resized/{new_filename}", img_buffer.read())
+        
+        # Provide download link for ZIP
+        zip_buffer.seek(0)
+        st.download_button(
+            label="Download ZIP of All Resized Images",
+            data=zip_buffer,
+            file_name=f"{restaurant_name}_resized_images.zip",
+            mime="application/zip",
+            key="download_all"
+        )
